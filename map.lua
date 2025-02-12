@@ -1,45 +1,82 @@
 local isPauseMenuActive = false
 local mapProp = "prop_tourist_map_01"
-local mapPropObject = nil 
-function startMapAnimation()
-    local playerPed = PlayerPedId()
+local mapPropObject = nil
+local animDict = "amb@world_human_tourist_map@male@base"
+local animName = "base"
 
-    RequestModel(mapProp)
-    while not HasModelLoaded(mapProp) do
-        Wait(1)
+local function loadModel(model)
+    if not HasModelLoaded(model) then
+        RequestModel(model)
+        while not HasModelLoaded(model) do
+            Wait(10)
+        end
     end
-
-    RequestAnimDict("amb@world_human_tourist_map@male@base")
-    while not HasAnimDictLoaded("amb@world_human_tourist_map@male@base") do
-        Wait(1)
-    end
-
-    mapPropObject = CreateObject(GetHashKey(mapProp), 0, 0, 0, true, true, true) -- Store the prop object globally
-    local rightHandIndex = GetPedBoneIndex(playerPed, 57005)
-    AttachEntityToEntity(mapPropObject, playerPed, rightHandIndex, 0.09, 0.02, -0.08, -80.0, 0.0, 0.0, true, true, false, true, 1, true)
-    
-    TaskPlayAnim(playerPed, "amb@world_human_tourist_map@male@base", "base", 8.0, -8.0, -1, 49, 0, false, false, false)
 end
 
-function stopMapAnimation()
-    ClearPedTasks(PlayerPedId())
-    RemoveAnimDict("amb@world_human_tourist_map@male@base")
-    if mapPropObject and DoesEntityExist(mapPropObject) then
+local function loadAnimDict(dict)
+    if not HasAnimDictLoaded(dict) then
+        RequestAnimDict(dict)
+        while not HasAnimDictLoaded(dict) do
+            Wait(10)
+        end
+    end
+end
+
+local function startMapAnimation()
+    local playerPed = PlayerPedId()
+    
+    loadModel(mapProp)
+    loadAnimDict(animDict)
+
+    local playerCoords = GetEntityCoords(playerPed)
+    mapPropObject = CreateObject(GetHashKey(mapProp), playerCoords.x, playerCoords.y, playerCoords.z, true, true, true)
+    
+    if DoesEntityExist(mapPropObject) then
+        local boneIndex = GetPedBoneIndex(playerPed, 28422) -- Right Hand
+        
+        AttachEntityToEntity(mapPropObject, playerPed, boneIndex, 
+            0.11734371230796, 0.10996638210045, 0.031427339906436, 
+            135.75262618374, 9.3033500212994, 51.877293346622, 
+            true, true, false, true, 1, true)
+        
+        if IsEntityAttached(mapPropObject) then
+            TaskPlayAnim(playerPed, animDict, animName, 8.0, -8.0, -1, 49, 0, false, false, false)
+        else
+            print("Failed to attach map to player")
+            DeleteObject(mapPropObject)
+            mapPropObject = nil
+        end
+    else
+        print("Failed to create map object")
+    end
+end
+
+local function stopMapAnimation()
+    local playerPed = PlayerPedId()
+    ClearPedTasks(playerPed)
+    RemoveAnimDict(animDict)
+    
+    if DoesEntityExist(mapPropObject) then
+        DetachEntity(mapPropObject, true, true)
         DeleteObject(mapPropObject)
-        mapPropObject = nil -- Clear the reference after deletion
+        mapPropObject = nil
     end
 end
 
 Citizen.CreateThread(function()
     while true do
-        Citizen.Wait(300)
-
-        if IsPauseMenuActive() and not isPauseMenuActive then
-            isPauseMenuActive = true
-            startMapAnimation()
-        elseif not IsPauseMenuActive() and isPauseMenuActive then
-            isPauseMenuActive = false
-            stopMapAnimation()
+        local pauseMenuState = IsPauseMenuActive()
+        
+        if pauseMenuState ~= isPauseMenuActive then
+            isPauseMenuActive = pauseMenuState
+            
+            if isPauseMenuActive then
+                startMapAnimation()
+            else
+                stopMapAnimation()
+            end
         end
+        
+        Citizen.Wait(300)
     end
 end)
