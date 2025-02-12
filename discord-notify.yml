@@ -1,0 +1,17 @@
+name: Discord Notification
+
+on: [push, pull_request]
+
+jobs:
+  discord_notification:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+
+    - name: Discord Webhook
+      env:
+        DISCORD_WEBHOOK: ${{ secrets.DISCORD_WEBHOOK }}
+      uses: Ilshidur/action-discord@master
+      with:
+        args: 'A {{ event_name }} event occurred on {{ repository.full_name }}.'
