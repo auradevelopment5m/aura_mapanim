@@ -80,4 +80,3 @@ Citizen.CreateThread(function()
         Citizen.Wait(300)
     end
 end)
--- w
