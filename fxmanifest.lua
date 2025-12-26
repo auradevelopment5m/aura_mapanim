@@ -1,10 +1,15 @@
 fx_version 'cerulean'
+name 'aura_mapanim'
 games { 'gta5' }
+lua54 'yes'
 
-author 'ZDev'
+author 'Aura Development'
 description 'A script for handling map animations when the pause menu is active.'
-version '1.0.0'
+version '1.1'
+
+shared_script '@ox_lib/init.lua'
 
 client_scripts {
-    'map.lua' 
+    'shared/config.lua',
+    'client/main.lua' 
 }
